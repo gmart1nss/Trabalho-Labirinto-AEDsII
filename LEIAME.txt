@@ -1,0 +1,494 @@
+Olá Matheus e Pinhata. Nesse arquivo aq eu e o ChatGPT vamos tentar explicar como q o nosso projeto vai funcionar
+
+1. QUAL E A IDEIA DO TRABALHO?
+
+O programa vai receber um labirinto 10x10 contendo:
+
+E = entrada
+S = saida
+X = parede
+0 = caminho livre
+
+A nossa ideia e encontrar um caminho entre E e S e imprimir as
+coordenadas desse caminho no formato pedido pelo Iago:
+
+linha,coluna
+
+Exemplo:
+
+0,4
+0,3
+1,3
+2,3
+2,2
+
+
+2. COMO VAMOS RESOLVER?
+
+Vamos usar:
+
+- FILA encadeada
+- Busca em Largura
+- matriz de visitados
+- matriz de predecessores
+
+A fila é a estrutura que vai controlar a ordem em que as posições
+do labirinto serão exploradas.
+
+---
+
+3. POR QUE USAR FILA?
+
+Quando estamos em uma posição do labirinto, podemos encontrar ate
+4 vizinhos:
+
+                  cima
+                   |
+        esquerda - X - direita
+                   |
+                 baixo
+
+Em vez de seguir um caminho ate o fim de uma vez, a Busca em Largura explora
+primeiro os vizinhos mais próximos da posição atual.
+
+Depois ela explora os vizinhos desses vizinhos.
+
+Depois os vizinhos dos vizinhos dos vizinhos.
+
+E assim por diante.
+
+Por isso podemos pensar que existe uma especie de "árvore de
+possibilidades" sendo formada durante a busca (só que no caso, a gente não vai aplicar aquelas paradas de árvore q ele explicou na última aula).
+
+---
+
+4. EXEMPLO 5x5
+
+Considere este labirinto:
+
+      0 1 2 3 4
+    -------------
+0 |   E 0 # # #
+1 |   # 0 0 0 #
+2 |   # # 0 0 #
+3 |   # # # 0 0
+4 |   # # # # S
+
+Entrada:
+
+E = (0,0)
+
+Saída:
+
+S = (4,4)
+
+---
+
+5. PRIMEIRO PASSO
+
+Começamos na entrada.
+
+Colocamos E na fila:
+
+Fila:
+[(0,0)]
+
+E também fica marcado como visitado.
+
+Visitados:
+
+V V # # #
+# . . . #
+# # . . #
+# # # . .
+# # # # .
+
+---
+
+6. PROCESSANDO A ENTRADA
+
+Tiramos (0,0) da fila.
+
+Agora verificamos seus quatro vizinhos:
+
+- cima: fora do labirinto
+- baixo: parede
+- esquerda: fora do labirinto
+- direita: (0,1), que e caminho livre
+
+Colocamos (0,1) na fila.
+
+Fila:
+[(0,1)]
+
+E marcamos:
+
+anterior[(0,1)] = (0,0)
+
+Isso significa:
+
+"(0,1) foi descoberta a partir de (0,0)".
+
+---
+
+7. CONTINUANDO A BUSCA
+
+Fila:
+[(0,1)]
+
+	- PASSO 1 — PROCESSANDO (0,1)
+
+Tiramos (0,1) da fila:
+
+Fila:
+[]
+
+Agora verificamos os 4 vizinhos de (0,1):
+
+      0 1 2 3 4
+    -------------
+0 |   V V # # #
+1 |   # 0 0 0 #
+2 |   # # 0 0 #
+3 |   # # # 0 0
+4 |   # # # # S
+
+(0,0) <-  (0,1) → (0,2)
+            |
+                        ↓
+          (1,1)
+
+- (0,0) → já foi visitado
+- (0,2) → parede
+- posição acima → fora do labirinto
+- (1,1) → caminho livre
+
+Então colocamos (1,1) na fila:
+
+Fila:
+[(1,1)]
+
+Também guardamos:
+
+anterior[(1,1)] = (0,1)
+
+Isso significa:
+
+"(1,1) foi encontrada a partir de (0,1)".
+
+
+	- PASSO 2 — PROCESSANDO (1,1)
+
+Agora tiramos (1,1) da fila:
+
+Fila:
+[]
+
+Verificamos seus 4 vizinhos:
+
+      0 1 2 3 4
+    -------------
+0 |   V V # # #
+1 |   # V 0 0 #
+2 |   # # 0 0 #
+3 |   # # # 0 0
+4 |   # # # # S
+
+
+        (0,1)
+                    ↑
+          |
+(1,0) ← (1,1) → (1,2)
+          |
+                    ↓
+        (2,1)
+
+- (0,1) → já foi visitado
+- (1,0) → parede
+- (2,1) → parede
+- (1,2) → caminho livre
+
+Então colocamos (1,2) na fila:
+
+Fila:
+[(1,2)]
+
+E guardamos:
+
+anterior[(1,2)] = (1,1)
+
+Até aqui, o caminho que descobrimos foi:
+
+(0,0) → (0,1) → (1,1) → (1,2)
+
+
+	- PASSO 3 — PROCESSANDO (1,2)
+
+Agora tiramos (1,2) da fila:
+
+Fila:
+[]
+
+Verificamos seus 4 vizinhos:
+
+      0 1 2 3 4
+    -------------
+0 |   V V # # #
+1 |   # V V 0 #
+2 |   # # 0 0 #
+3 |   # # # 0 0
+4 |   # # # # S
+
+        (0,2)
+                    ↑
+          |
+(1,1) ← (1,2) → (1,3)
+          |
+                    ↓
+        (2,2)
+
+Agora encontramos dois caminhos livres que ainda não foram
+visitados:
+
+(1,3)
+(2,2)
+
+Então os dois entram na fila:
+
+Fila:
+[(1,3), (2,2)]
+
+Também guardamos de onde cada um veio:
+
+anterior[(1,3)] = (1,2)
+anterior[(2,2)] = (1,2)
+
+
+	- A IDEIA DA "ARVORE"
+
+Podemos visualizar o que aconteceu como uma árvore de
+possibilidades:
+
+              (1,2)
+              /   \
+                           ↓         ↓
+          (1,3)  (2,2)
+
+Isso acontece porque (1,2) encontrou duas novas posições possíveis.
+
+Mas é importante entender que NÃO estamos criando uma árvore no código.
+
+O que realmente temos é somente a fila:
+
+Fila:
+[(1,3), (2,2)]
+
+A fila está dizendo: "Essas duas posições foram encontradas e ainda precisam ser analisadas."
+
+Primeiro vamos retirar (1,3):
+
+Fila:
+[(1,3), (2,2)]
+
+Retira (1,3):
+
+Fila:
+[(2,2)]
+
+Analisamos os vizinhos de (1,3) e colocamos novas posições no final da fila, caso existam.
+
+Depois fazemos a mesma coisa com (2,2):
+
+Fila:
+[(2,2), ...]
+
+Retira (2,2):
+
+Fila:
+[...]
+
+E continuamos assim.
+
+
+RESUMINDO
+
+A cada posição retirada da fila:
+
+1. Pegamos uma posição.
+2. Verificamos seus 4 vizinhos.
+3. Ignoramos paredes.
+4. Ignoramos posições fora do labirinto.
+5. Ignoramos posições que já foram visitadas.
+6. As posições novas são marcadas como visitadas.
+7. Guardamos de onde cada posição veio.
+8. Colocamos as novas posições no final da fila.
+
+É isso que faz a busca avançar:
+
+posição atual
+    ↓
+seus vizinhos
+    ↓
+vizinhos dos vizinhos
+    ↓
+vizinhos dos vizinhos dos vizinhos
+    ↓
+...
+    ↓
+saída S
+
+A "árvore" aparece apenas como uma forma de visualizar essas possibilidades.
+
+Na implementação, quem controla a ordem da busca é a FILA.
+
+---
+
+8. A MATRIZ DE PREDECESSORES
+
+Além de marcar os visitados, precisamos saber de onde cada posição veio.
+
+Para isso teremos:
+
+anterior[linha][coluna]
+
+Exemplo:
+
+anterior[(1,1)] = (0,1)
+anterior[(1,2)] = (1,1)
+anterior[(1,3)] = (1,2)
+anterior[(2,3)] = (1,3)
+
+Isso cria uma especie de caminho de volta.
+
+Quando encontramos S:
+
+anterior[S] = posição anterior a S
+
+E podemos continuar voltando ate chegar em E.
+
+---
+
+9. RECONSTRUINDO O CAMINHO
+
+No nosso exemplo, quando encontramos a saída:
+
+S = (4,4)
+
+Os predecessores nos dizem:
+
+(4,4) veio de (3,4)
+(3,4) veio de (3,3)
+(3,3) veio de (2,3)
+(2,3) veio de (1,3)
+(1,3) veio de (1,2)
+(1,2) veio de (1,1)
+(1,1) veio de (0,1)
+(0,1) veio de (0,0)
+
+Se seguirmos isso, estamos indo de trás para frente:
+
+(4,4)
+(3,4)
+(3,3)
+(2,3)
+(1,3)
+(1,2)
+(1,1)
+(0,1)
+(0,0)
+
+Então precisamos inverter a ordem para imprimir:
+
+(0,0)
+(0,1)
+(1,1)
+(1,2)
+(1,3)
+(2,3)
+(3,3)
+(3,4)
+(4,4)
+
+---
+
+10. A LOGICA COMPLETA
+
+O programa vai funcionar mais ou menos assim:
+
+1. Ler o arquivo do labirinto.
+2. Encontrar a posição de E.
+3. Encontrar a posição de S.
+4. Criar uma fila vazia.
+5. Marcar E como visitada.
+6. Colocar E na fila.
+7. Enquanto a fila não estiver vazia:
+   - retirar uma posição da fila;
+   - verificar cima, baixo, esquerda e direita;
+   - ignorar paredes;
+   - ignorar posições fora da matriz;
+   - ignorar posições já visitadas;
+   - marcar novas posições como visitadas;
+   - guardar o predecessor;
+   - colocar as novas posições na fila.
+8. Quando encontrar S, parar a busca.
+9. Voltar de S usando a matriz de predecessores.
+10. Inverter o caminho.
+11. Imprimir as coordenadas.
+
+---
+
+11. O QUE CADA PARTE DO CÓDIGO VAI FAZER?
+
+	 - posicao.h
+
+Vai guardar a estrutura que representa uma coordenada:
+
+struct posicao {
+    int linha;
+    int coluna;
+};
+
+	- fila.h / fila.c
+
+Vai cuidar da fila encadeada.
+
+A fila vai guardar posições do labirinto.
+
+	- labirinto.h / labirinto.c
+
+Vai cuidar da leitura do arquivo, da matriz do labirinto e da
+localização da entrada e da saída.
+
+	- main.c
+
+Vai juntar tudo:
+
+- ler o labirinto;
+- encontrar E e S;
+- executar a busca;
+- reconstruir o caminho;
+- imprimir o resultado.
+
+---
+
+12. ESTRUTURA DO PROJETO
+
+labirinto/
+|
+|-- src/
+|   |-- main.c
+|   |-- fila.c
+|   |-- fila.h
+|   |-- labirinto.c
+|   |-- labirinto.h
+|   |-- posicao.h
+|
+|-- labirintos/
+|   |-- labirinto1.txt
+|   |-- labirinto2.txt
+|   |-- labirinto3.txt
+|   |-- labirinto4.txt
+|   |-- labirinto5.txt
+|
+|-- Makefile
+|-- LEIAME.txt
